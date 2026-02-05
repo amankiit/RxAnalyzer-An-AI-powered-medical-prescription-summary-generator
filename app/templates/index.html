@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prescription Analyzer</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="background"></div>
+    <main class="container">
+      <header class="hero">
+        <H1>RxAnalyzer</H1>
+        <h2>Turn prescriptions into structured, readable summaries.</h2>
+        <p class="subtitle">
+          Upload an English prescription image or paste text. The app uses Perplexity AI to extract key
+          fields and generate a concise clinical-style summary.
+        </p>
+      </header>
+
+      <section class="panel">
+        <div class="two-col">
+          <form id="analyzer-form" class="form">
+            <label class="upload">
+              <input id="file-input" type="file" accept="image/*" />
+              <span>Choose a prescription image</span>
+            </label>
+
+            <div class="divider">or paste text</div>
+
+            <textarea id="text-input" placeholder="Paste text here for quick testing..."></textarea>
+
+            <div class="actions">
+              <button type="submit" class="primary">Extract & Summarize</button>
+              <button type="button" id="clear" class="ghost">Clear</button>
+            </div>
+          </form>
+
+          <aside class="preview">
+            <h3>Image Preview</h3>
+            <div class="preview-frame">
+              <img id="image-preview" alt="Uploaded prescription preview" />
+              <p id="preview-placeholder">No image selected.</p>
+            </div>
+          </aside>
+        </div>
+
+        <p class="disclaimer">
+          This tool is for prototyping only and does not provide medical advice. Images are sent to Perplexity
+          for processing. Always review results with a licensed clinician.
+        </p>
+      </section>
+
+      <section class="panel results" id="results" hidden>
+        <div class="summary">
+          <h2>Summary</h2>
+          <p id="summary-text"></p>
+        </div>
+
+
+      </section>
+
+      <section id="status" class="status" hidden></section>
+    </main>
+
+    <script>
+      const form = document.getElementById("analyzer-form");
+      const fileInput = document.getElementById("file-input");
+      const textInput = document.getElementById("text-input");
+      const clearBtn = document.getElementById("clear");
+      const imagePreview = document.getElementById("image-preview");
+      const previewPlaceholder = document.getElementById("preview-placeholder");
+      const results = document.getElementById("results");
+      const summaryText = document.getElementById("summary-text");
+      const status = document.getElementById("status");
+
+      function setPreview(file) {
+        if (!file) {
+          imagePreview.removeAttribute("src");
+          imagePreview.style.display = "none";
+          previewPlaceholder.style.display = "block";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          imagePreview.src = reader.result;
+          imagePreview.style.display = "block";
+          previewPlaceholder.style.display = "none";
+        };
+        reader.readAsDataURL(file);
+      }
+
+      fileInput.addEventListener("change", () => {
+        setPreview(fileInput.files[0]);
+      });
+
+      function setStatus(message, tone) {
+        status.textContent = message;
+        status.className = `status ${tone}`;
+        status.hidden = !message;
+      }
+
+      clearBtn.addEventListener("click", () => {
+        fileInput.value = "";
+        textInput.value = "";
+        results.hidden = true;
+        setPreview(null);
+        setStatus("", "");
+      });
+
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        const file = fileInput.files[0];
+        const text = textInput.value.trim();
+
+        if (!file && !text) {
+          setStatus("Upload an image or paste text first.", "warn");
+          return;
+        }
+
+        const formData = new FormData();
+        if (file) {
+          formData.append("file", file);
+        }
+        if (text) {
+          formData.append("raw_text", text);
+        }
+
+        setStatus("Analyzing with Perplexity...", "info");
+
+        try {
+          const response = await fetch("/api/analyzer", {
+            method: "POST",
+            body: formData,
+          });
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || "Something went wrong.");
+          }
+
+          summaryText.textContent = data.summary || "";
+          results.hidden = false;
+          setStatus("Extraction complete.", "success");
+        } catch (err) {
+          setStatus(err.message, "error");
+        }
+      });
+    </script>
+  </body>
+</html>
