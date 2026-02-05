@@ -2,7 +2,9 @@
 
 A lightweight web app that uses Perplexity Sonar vision to read English prescription images, extract key fields, and generate an abstractive clinical-style summary.
 
-<img width="894" height="737" alt="Screenshot 2026-02-05 at 8 00 48 PM" src="https://github.com/user-attachments/assets/7185c64a-6c5c-4cda-b050-82cafa84a239" style="border-radius: 12px;" />
+<img width="894" height="737" alt="Screenshot ..." 
+     src="https://github.com/user-attachments/assets/7185c64a-6c5c-4cda-b050-82cafa84a239" 
+     style="border-radius: 50%;">
 
 ## Quick start
 
